@@ -1,5 +1,6 @@
 #+startup: showall hideblocks
 #+options: toc:nil
+#+property: :export never-eval
 
 * Literate Chess Puzzle Solving with Org
 
