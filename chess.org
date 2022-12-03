@@ -1,13 +1,15 @@
-#+title: Literate Chess Puzzle Solving with Org
+#+title: Mate-in-2 Chess Puzzles
+#+subtitle: A Literate Solution with Org
 #+author: Glenn Hutchings
 
+#+setupfile: html.org
 #+startup: showall hideblocks
 
-@@html:
-<style>
-.figure-number { display: none; }
-</style>
-@@
+#+property: header-args+ :session
+#+property: header-args+ :results output
+#+property: header-args+ :eval no-export
+
+* Inspiration
 
 Every Wednesday in my town, there's a pub quiz at the Queens Head.
 Richard, the landlord, runs a very quirky quiz where the prize hardly ever
@@ -20,47 +22,56 @@ The Fuddler.  Every month, along with the advert, there's a mate-in-2 chess
 puzzle.  Richard is a chess fan; I don't know where he gets the puzzles
 from, but they're always quite fiendish.
 
-#+attr_html: :width 50%
-#+caption: Advert in The Fuddler, November 2022
-[[./fuddler.png]]
+In the advert puzzle shown ([[Fuddler]]), the Black King is hemmed in and can't
+move.  All White needs to do is give check, which looks easy: *RxN*, which
+also removes the troublesome Knight, and the King still has nowhere to go.
+But there's an escape: *Qf5*, blocking the Rook check.  The Rook can simply
+take the Queen, giving check again, but now Black has another escape move:
+*Ke4*, since the Bishop is now blocked by the Rook.
 
-In the puzzle above, the Black King is hemmed in and can't move.  All White
-needs to do is give check, which looks easy: *RxN*, which also removes the
-troublesome Knight, and the King still has nowhere to go.  But there's an
-escape: *Qf5*, blocking the Rook check.  The Rook can simply take the
-Queen, giving check again, but now Black has another escape move: *Ke4*,
-since the Bishop is now blocked by the Rook.
+#+name: Fuddler
+#+caption: Advert in The Fuddler, November 2022
+#+attr_html: :width 60% :align center
+#+attr_latex: :width 10cm
+[[file:fuddler.png]]
 
 And that's as far as I got with this one.
 
 This happens a lot.  Even if I think I've worked out the answer, I'm never
-completely sure about it.  And, slightly annoyingly, there's never any
-answer to the puzzle in the next issue.  But I'd like to know what I've
-missed, mainly to get that "Aha!" moment.  So... I decided to find some
-tools to help.
+completely sure I haven't missed something.  And, slightly annoyingly,
+there's never any answer to the puzzle in the next issue.  But I'd like to
+know what I've missed, mainly to get that "Aha!" moment.  So... I decided
+to find some tools to help.
 
-I looked at [[https://lichess.org][Lichess]], which is a great free online chess tool, and accepts
-board positions in FEN format.  For the puzzle above, the FEN format is:
+* Lichess
 
-#+begin_src ascii
+The first thing I looked at was [[https://lichess.org][Lichess]], which is a great free online chess
+tool, and accepts board positions in [[https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation][FEN]] format.  For the puzzle above, the
+FEN format is:
+
+#+begin_example
 5K2/3PRnQB/2p5/3p4/5k2/7q/2N5/4N3 w - - 0 1
-#+end_src
+#+end_example
 
-You can get it to set up the position like [[https://lichess.org/analysis/standard/5K2/3PRnQB/2p5/3p4/5k2/7q/2N5/4N3#0][this]].  Its Stockfish analysis
-mode will come up with a mate in 2:
+You can get it to set up the position like [[https://lichess.org/analysis/standard/5K2/3PRnQB/2p5/3p4/5k2/7q/2N5/4N3#0][this]].  If you turn on Stockfish
+analysis mode, it will will come up with a mate in 2:
 
-: 1. Ne3
-: 2. Qf5  N3g2#
+#+begin_example
+1. Ne3
+2. Qf5  N3g2#
+#+end_example
 
-Hmm.  OK, that's mate, but what if Black had done something different?
+Hmm.  OK, that's mate, but what if Black had done something different?  I
+couldn't figure out how to get any alternative Black moves; maybe I was
+missing something.  Lichess has an [[https://lichess.org/api][API]], but it doesn't seem to have
+anything to help solve chess puzzles.
 
-# TODO: mention popeye option
+* Popeye
 
-[[https://www.chessprogramming.org/Popeye][Popeye]] link.
-
-# TODO: link to https://github.com/thomas-maeder/popeye
-
-Here's the *popeye* input needed to solve the Fuddler puzzle above:
+Looking around some more, I found another option: [[https://www.chessprogramming.org/Popeye][Popeye]].  Not the sailor,
+but a standalone program specifically for solving chess puzzles.  After
+installing it, and reading just enough of the arcane [[https://raw.githubusercontent.com/thomas-maeder/popeye/master/py-engl.txt][manual]] to figure out
+how to encode the puzzle, I cobbled together this input:
 
 #+name: popeye-input
 #+begin_example
@@ -68,99 +79,138 @@ Begin
 Origin       Fuddler, November 2022
 Pieces       White Se1 Sc2 Pd7 Re7 Qg7 Bh7 Kf8
              Black Qh3 Kf4 Pd5 Pc6 Sf7
-Option       Variation
+Option       NoBoard Variation
 Stipulation  #2
 End
 #+end_example
 
+Instead of FEN notation, it lists the Black and White pieces individually
+by position.  Strangely, Popeye uses *S* to indicate a Knight instead of
+*N*.  It's the =Variation= option which gets all the possible Black
+replies; without that, you just get the winning first move.
+
+Feeding it into Popeye, this is what comes out:
+
 #+name: run-popeye
-#+begin_src sh :stdin popeye-input :eval no-export :exports results :results raw :wrap src ascii
-popeye
+#+begin_src sh :stdin popeye-input :exports results
+popeye | egrep '^ +[0-9]' | sed -e 's/^   //'
 #+end_src
 
 #+RESULTS: run-popeye
-#+begin_src ascii
-Popeye Linux-3.16.0-38-generic-x86_64-64Bit v4.79 (1024 MB)
+#+begin_example
+1.Sc2-e3 ! zugzwang.
+   1...Qh3-f1
+       2.Qg7-g4 #
+   1...Qh3-g2
+       2.Se3*g2 #
+   1...Qh3*d7
+       2.Se3-g2 #
+   1...Qh3-e6
+       2.Se3-g2 #
+   1...Qh3-f5
+       2.Se3-g2 #
+   1...Qh3-g4
+       2.Qg7*g4 #
+   1...Qh3-h1
+       2.Qg7-g4 #
+   1...Qh3-h2
+       2.Qg7-g4 #
+   1...Qh3*e3
+       2.Re7*f7 #
+   1...Qh3-f3
+       2.Se1-d3 #
+   1...Qh3-g3
+       2.Qg7-f6 #
+   1...Qh3*h7
+       2.Qg7-g4 #
+   1...Qh3-h6
+       2.Se3-g2 #
+   1...Qh3-h5
+       2.Se3-g2 #
+   1...Qh3-h4
+       2.Se3-g2 #
+   1...d5-d4
+       2.Re7-e4 #
+   1...c6-c5
+       2.Se3*d5 #
+   1...Sf7-d6
+       2.Qg7-e5 #
+   1...Sf7-e5
+       2.Qg7*e5 #
+   1...Sf7-g5
+       2.Qg7-e5 #
+   1...Sf7-h6
+       2.Qg7-e5 #
+   1...Sf7-h8
+       2.Qg7-e5 #
+   1...Sf7-d8
+       2.Qg7-e5 #
+#+end_example
 
-       Fuddler, November 2022
+So the winning move is *Nc2-e3*, which agrees with Lichess.  But now it's a
+bit clearer /why/: It leaves Black in a [[https://en.wikipedia.org/wiki/Zugzwang][Zugzwang]] position such that any of
+23 possible moves has a mating reply.  It's safe to say I would not have
+worked that out.
 
-+---a---b---c---d---e---f---g---h---+
-|                                   |
-8   .   .   .   .   .   K   .   .   8
-|                                   |
-7   .   .   .   P   R  -S   Q   B   7
-|                                   |
-6   .   .  -P   .   .   .   .   .   6
-|                                   |
-5   .   .   .  -P   .   .   .   .   5
-|                                   |
-4   .   .   .   .   .  -K   .   .   4
-|                                   |
-3   .   .   .   .   .   .   .  -Q   3
-|                                   |
-2   .   .   S   .   .   .   .   .   2
-|                                   |
-1   .   .   .   .   S   .   .   .   1
-|                                   |
-+---a---b---c---d---e---f---g---h---+
-  #2                          7 + 5
+Well, Popeye did what I asked it, but I still wasn't happy with the method.
+The Popeye input syntax is quite clunky; I much prefer the FEN format used
+by Lichess.  Also I think the output could be summarized more succinctly,
+by grouping the moves by mating reply.  Could I do better?
 
-   1.Sc2-e3 ! zugzwang.
-      1...Qh3-f1
-          2.Qg7-g4 #
-      1...Qh3-g2
-          2.Se3*g2 #
-      1...Qh3*d7
-          2.Se3-g2 #
-      1...Qh3-e6
-          2.Se3-g2 #
-      1...Qh3-f5
-          2.Se3-g2 #
-      1...Qh3-g4
-          2.Qg7*g4 #
-      1...Qh3-h1
-          2.Qg7-g4 #
-      1...Qh3-h2
-          2.Qg7-g4 #
-      1...Qh3*e3
-          2.Re7*f7 #
-      1...Qh3-f3
-          2.Se1-d3 #
-      1...Qh3-g3
-          2.Qg7-f6 #
-      1...Qh3*h7
-          2.Qg7-g4 #
-      1...Qh3-h6
-          2.Se3-g2 #
-      1...Qh3-h5
-          2.Se3-g2 #
-      1...Qh3-h4
-          2.Se3-g2 #
-      1...d5-d4
-          2.Re7-e4 #
-      1...c6-c5
-          2.Se3*d5 #
-      1...Sf7-d6
-          2.Qg7-e5 #
-      1...Sf7-e5
-          2.Qg7*e5 #
-      1...Sf7-g5
-          2.Qg7-e5 #
-      1...Sf7-h6
-          2.Qg7-e5 #
-      1...Sf7-h8
-          2.Qg7-e5 #
-      1...Sf7-d8
-          2.Qg7-e5 #
+* Python Chess
 
+I didn't find any other tools specifically for the mate-in-2 problem.  But
+I /did/ find a Python [[https://python-chess.readthedocs.io/en/latest/index.html][chess]] module.  Its documentation says it can
+manipulate chess boards and positions in various ways, make moves, detect
+checkmate, and a bunch of other things.  Sounds good!  Let's have a go with
+it.
 
-solution finished. Time = 0.026 s
+First, let's see if we can get it to read my puzzle FEN position.
 
+#+begin_src python :exports both
+import chess
 
+fen = "5K2/3PRnQB/2p5/3p4/5k2/7q/2N5/4N3"
+board = chess.Board(fen)
+print(board)
 #+end_src
+
+Running this, we get:
+
+#+RESULTS:
+: . . . . . K . .
+: . . . P R n Q B
+: . . p . . . . .
+: . . . p . . . .
+: . . . . . k . .
+: . . . . . . . q
+: . . N . . . . .
+: . . . . N . . .
+
+Cute.  An ASCII board showing the position.  Digging into the docs a bit
+more, it turns out that it can also write SVG files:
+
+#+begin_src python :results silent
+from pathlib import Path
+from chess import svg
+
+Path("fuddler.svg").write_text(svg.board(board))
+#+end_src
+
+Here's what the resulting file looks like:
+
+#+attr_html: :width 60% :align center
+[[file:fuddler.svg]]
+
+Much nicer!
 
 # TODO: add pychess mate-in-2 code, with board example
 # TODO: tangle output into standalone script
+# TODO: add possible future enhancements (mate-in-more?)
+
+* Org Mode
+
+# TODO: mention org mode, and link to org source
 
 # Local Variables:
 # org-confirm-babel-evaluate: nil
