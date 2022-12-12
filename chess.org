@@ -8,6 +8,7 @@
 #+property: header-args+ :session
 #+property: header-args+ :results output
 #+property: header-args+ :eval no-export
+#+property: header-args+ :noweb yes
 
 * Inspiration
 
@@ -339,10 +340,12 @@ ordering).  Now it's just a question of grouping all the replies by mating
 move.  Here's a function to do that on the replies returned by the
 ~mate_in_2~ function:
 
-#+name: group-replies
 #+begin_src python :results silent
   from collections import defaultdict
+#+end_src
 
+#+name: group-replies
+#+begin_src python :results silent
   def group_replies(replies):
       mating_moves = defaultdict(list)
       for reply, mating_move in replies.items():
@@ -351,19 +354,26 @@ move.  Here's a function to do that on the replies returned by the
       return mating_moves
 #+end_src
 
-Let's use this to group the replies in the example:
+Now we need a function to print the solution:
 
-#+name: group-replies-output
-#+begin_src python :exports both
-  for move, replies in mate_in_2(fen):
-      print(f"1. {move}")
+#+name: print-solutions
+#+begin_src python :results silent
+  def print_solutions(fen):
+      for move, replies in mate_in_2(fen):
+          print(f"1. {move}")
 
-      for mating_move, replies in group_replies(replies).items():
-          allreplies = ", ".join(replies)
-          print(f"1. ... {allreplies}  2. {mating_move}")
+          for mating_move, replies in group_replies(replies).items():
+              allreplies = ", ".join(replies)
+              print(f"1. ... {allreplies}  2. {mating_move}")
 #+end_src
 
-#+RESULTS: group-replies-output
+Let's use this to print the example solution:
+
+#+begin_src python
+  print_solutions(fen)
+#+end_src
+
+#+RESULTS:
 #+begin_example
 1. Ne3
 1. ... Nh8, Nd8, Nh6, Nd6, Ng5  2. Qe5#
@@ -384,6 +394,33 @@ Let's use this to group the replies in the example:
 * TODO Org Mode
 
 # Mention org mode, and link to org source
+
+* Tangling                                                         :noexport:
+
+Here's the complete mate-in-2 program:
+
+#+begin_src python :tangle mate-in-2.py :padline yes
+  """
+  Mate-in-2 chess puzzle solver.
+  """
+
+  import chess
+  from collections import defaultdict
+
+
+  <<mate-in-2>>
+
+
+  <<make-legal-move>>
+
+
+  <<group-replies>>
+
+
+  <<print-solutions>>
+#+end_src
+
+#+RESULTS:
 
 * Footnotes
 
