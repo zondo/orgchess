@@ -223,7 +223,7 @@ when analysis of that part of the tree is done.  Here's my attempt: the
 ~make_legal_move()~ iterator.  For each legal move it updates the board,
 yields the move in [[https://en.wikipedia.org/wiki/Algebraic_notation_(chess)][SAN]] format, and undoes the move afterwards.
 
-#+name: make-legal-move
+#+name: make_legal_move
 #+begin_src python :results silent
   def make_legal_move(board):
       for move in board.legal_moves:
@@ -263,7 +263,7 @@ OK, the next problem is how to use this function to look ahead and find a
 mate-in-2 solution to the puzzle.  After a few iterations and dead ends,
 here's what I came up with:
 
-#+name: mate-in-2
+#+name: mate_in_2
 #+begin_src python :results silent
   def mate_in_2(fen):
       board = chess.Board(fen)
@@ -349,7 +349,7 @@ move.  Here's a function to do that on the replies returned by the
   from collections import defaultdict
 #+end_src
 
-#+name: print-solutions
+#+name: print_solutions
 #+begin_src python :results silent
   def print_solutions(fen, separator=" "):
       for move, replies in mate_in_2(fen):
@@ -405,7 +405,7 @@ Let's use this to print the example solution:
 
 * Tangling                                                         :noexport:
 
-Here's the complete mate-in-2 program:
+Here's the complete mate_in_2 program:
 
 # TODO: add a main program
 
@@ -418,13 +418,13 @@ Here's the complete mate-in-2 program:
   from collections import defaultdict
 
 
-  <<mate-in-2>>
+  <<mate_in_2>>
 
 
-  <<make-legal-move>>
+  <<make_legal_move>>
 
 
-  <<print-solutions>>
+  <<print_solutions>>
 #+end_src
 
 #+RESULTS:
