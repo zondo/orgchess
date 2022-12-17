@@ -170,6 +170,7 @@ First, let's see if we can get it to read my puzzle FEN position.
 
 #+name: imports
 #+begin_src python :results silent :exports none
+import sys
 import chess
 from collections import defaultdict
 #+end_src
@@ -265,9 +266,7 @@ here's what I came up with:
 
 #+name: mate_in_2
 #+begin_src python :results silent
-  def mate_in_2(fen):
-      board = chess.Board(fen)
-
+  def mate_in_2(board):
       # Look at all first moves for white.
       for move in make_legal_move(board):
           # Keep track of Black's replies, and White's mating moves.
@@ -303,7 +302,8 @@ in a chess-style format:
 
 #+name: mate-in-2-output
 #+begin_src python :exports both
-  for move, replies in mate_in_2(fen):
+  board = chess.Board(fen)
+  for move, replies in mate_in_2(board):
       print(f"1. {move}")
       for reply, mating_move in sorted(replies.items()):
           print(f"1. ... {reply:6} 2. {mating_move}")
@@ -349,34 +349,35 @@ move.  Here's a function to do that on the replies returned by the
   from collections import defaultdict
 #+end_src
 
-#+name: print_solutions
+#+name: print_solution
 #+begin_src python :results silent
-  def print_solutions(fen, separator=" "):
-      for move, replies in mate_in_2(fen):
-          print(f"1. {move}")
+  def print_solution(move, replies, separator=" "):
+      print(f"1. {move}")
 
-          # Group replies by mating move.
-          mating_moves = defaultdict(list)
-          for reply, mating_move in replies.items():
-              mating_moves[mating_move].append(reply)
+      # Group replies by mating move.
+      mating_moves = defaultdict(list)
+      for reply, mating_move in replies.items():
+          mating_moves[mating_move].append(reply)
 
-          # Build output lines.
-          maxlen = 0
-          replylist = []
-          for mating_move, replies in mating_moves.items():
-              replytext = separator.join(replies)
-              maxlen = max(maxlen, len(replytext))
-              replylist.append([replytext, mating_move])
+      # Build output lines and find max line length.
+      maxlen = 0
+      replylist = []
+      for mating_move, replies in mating_moves.items():
+          replytext = separator.join(replies)
+          maxlen = max(maxlen, len(replytext))
+          replylist.append([replytext, mating_move])
 
-          # Print them.
-          for replytext, mating_move in replylist:
-              print("1. ... %-*s  2. %s" % (maxlen, replytext, mating_move))
+      # Print them.
+      for replytext, mating_move in replylist:
+          print("1. ... %-*s  2. %s" % (maxlen, replytext, mating_move))
 #+end_src
 
 Let's use this to print the example solution:
 
 #+begin_src python :exports results
-  print_solutions(fen)
+  board = chess.Board(fen)
+  for move, replies in mate_in_2(board):
+      print_solution(move, replies)
 #+end_src
 
 #+RESULTS:
@@ -396,8 +397,8 @@ Let's use this to print the example solution:
 #+end_example
 
 # TODO: try a table instead (:results value)
-
-# TODO: tangle output into standalone script
+# TODO: try making a game tree (what output options?)
+# TODO: try creating SVG move diagrams
 
 * TODO Org Mode
 
@@ -405,17 +406,31 @@ Let's use this to print the example solution:
 
 * Tangling                                                         :noexport:
 
-Here's the complete mate_in_2 program:
+For a tangled solver script, we also need a main program to invoke:
 
-# TODO: add a main program
+#+name: main
+#+begin_src python :results silent
+  def main(args=sys.argv[1:]):
+      for fen in args:
+          board = chess.Board(fen)
+          print()
+          print(board)
+          for move, replies in mate_in_2(board):
+              print()
+              print_solution(move, replies)
+#+end_src
 
-#+begin_src python :tangle mate-in-2.py :padline yes
+Putting it all together, here's the complete script:
+
+#+begin_src python :tangle mate-in-2.py :results silent
   """
   Mate-in-2 chess puzzle solver.
   """
 
-  import chess
-  from collections import defaultdict
+  <<imports>>
+
+
+  <<main>>
 
 
   <<mate_in_2>>
@@ -424,10 +439,44 @@ Here's the complete mate_in_2 program:
   <<make_legal_move>>
 
 
-  <<print_solutions>>
+  <<print_solution>>
+
+
+  if __name__ == "__main__":
+      main()
+#+end_src
+
+Finally, a test to see if it works.
+
+#+begin_src sh
+  python mate-in-2.py 5K2/3PRnQB/2p5/3p4/5k2/7q/2N5/4N3
 #+end_src
 
 #+RESULTS:
+#+begin_example
+
+. . . . . K . .
+. . . P R n Q B
+. . p . . . . .
+. . . p . . . .
+. . . . . k . .
+. . . . . . . q
+. . N . . . . .
+. . . . N . . .
+
+1. Ne3
+1. ... Nh8 Nd8 Nh6 Nd6 Ng5       2. Qe5#
+1. ... Ne5                       2. Qxe5#
+1. ... Qxh7 Qh2 Qh1 Qf1          2. Qg4#
+1. ... Qxd7 Qh6 Qe6 Qh5 Qf5 Qh4  2. N3g2#
+1. ... Qg4                       2. Qxg4#
+1. ... Qg3                       2. Qf6#
+1. ... Qf3                       2. Nd3#
+1. ... Qxe3                      2. Rxf7#
+1. ... Qg2                       2. N3xg2#
+1. ... c5                        2. Nxd5#
+1. ... d4                        2. Re4#
+#+end_example
 
 * Footnotes
 
