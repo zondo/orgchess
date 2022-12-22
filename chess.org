@@ -240,7 +240,7 @@ Let's see if that works for the puzzle board.  It should produce a list of
 valid first moves for White.
 
 #+name: legal-moves-output
-#+begin_src python :wrap example
+#+begin_src python :wrap example :exports both
   import textwrap
 
   moves = ", ".join(make_legal_move(board))
