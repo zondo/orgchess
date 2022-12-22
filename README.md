@@ -1,23 +1,23 @@
 
 # Table of Contents
 
--   [Literate Chess Puzzle Solving with Org](#org9d558bc)
-    -   [Inspiration](#org31accb9)
-    -   [Lichess](#orga7176e8)
-    -   [Popeye](#orgc115687)
-    -   [Python Chess](#org419695d)
-    -   [Org Mode](#org1e5c3ca)
--   [License](#org30fdea5)
+-   [Literate Chess Puzzle Solving with Org](#org2a52d08)
+    -   [Inspiration](#org29a5478)
+    -   [Lichess](#org1cb31dd)
+    -   [Popeye](#orge7cf02a)
+    -   [Python Chess](#orga9549f9)
+    -   [Org Mode](#org0100c1a)
+-   [License](#org5be6a7f)
 
 
 
-<a id="org9d558bc"></a>
+<a id="org2a52d08"></a>
 
 # Literate Chess Puzzle Solving with Org
 
 
 
-<a id="org31accb9"></a>
+<a id="org29a5478"></a>
 
 ## Inspiration
 
@@ -32,7 +32,7 @@ The Fuddler.  Every month, along with the advert, there's a mate-in-2 chess
 puzzle.  Richard is a chess fan; I don't know where he gets the puzzles
 from, but they're always quite fiendish.
 
-In the advert puzzle shown ([4](#org5b5bb8e)), the Black King is hemmed in and can't
+In the advert puzzle shown ([4](#org1101cc0)), the Black King is hemmed in and can't
 move.  All White needs to do is give check, which looks easy: **RxN**, which
 also removes the troublesome Knight, and the King still has nowhere to go.
 But there's an escape: **Qf5**, blocking the Rook check.  The Rook can simply
@@ -50,7 +50,7 @@ know what I've missed, mainly to get that "Aha!" moment.  So&#x2026; I decided
 to find some tools to help.
 
 
-<a id="orga7176e8"></a>
+<a id="org1cb31dd"></a>
 
 ## Lichess
 
@@ -72,7 +72,7 @@ missing something.  Lichess has an [API](https://lichess.org/api), but it doesn'
 anything to help solve chess puzzles.
 
 
-<a id="orgc115687"></a>
+<a id="orge7cf02a"></a>
 
 ## Popeye
 
@@ -155,7 +155,7 @@ by Lichess.  And I think the output could be summarized more succinctly, by
 grouping the moves by mating reply.  Could I do better?
 
 
-<a id="org419695d"></a>
+<a id="orga9549f9"></a>
 
 ## Python Chess
 
@@ -167,8 +167,6 @@ it.
 
 First, let's see if we can get it to read my puzzle FEN position.
 
-    import chess
-    
     fen = "5K2/3PRnQB/2p5/3p4/5k2/7q/2N5/4N3"
     board = chess.Board(fen)
     print(board)
@@ -238,15 +236,14 @@ And here's the result:
 Wow, quite a lot of options!  Checking against the board, it does look like
 these are all White's valid moves.
 
-OK, the next problem is how to use that to find a mate-in-2 solution to the
-puzzle.  After a few iterations and dead ends, here's what I came up with:
+OK, the next problem is how to use this function to look ahead and find a
+mate-in-2 solution to the puzzle.  After a few iterations and dead ends,
+here's what I came up with:
 
-    def mate_in_2(fen):
-        board = chess.Board(fen)
-    
+    def mate_in_2(board):
         # Look at all first moves for white.
         for move in make_legal_move(board):
-            # Keep track of Black's replies, and White's and mating moves.
+            # Keep track of Black's replies, and White's mating moves.
             replies = {}
     
             # Does Black have a move that avoids mate?
@@ -276,10 +273,13 @@ winning move for White, and a `dict` of possible Black replies, each reply
 mapped to the final mating move.  Let's use this to print out the solution
 in a chess-style format:
 
-    for move, replies in mate_in_2(fen):
+    board = chess.Board(fen)
+    for move, replies in mate_in_2(board):
         print(f"1. {move}")
         for reply, mating_move in sorted(replies.items()):
             print(f"1. ... {reply:6} 2. {mating_move}")
+
+Running this, we get:
 
     1. Ne3
     1. ... Nd6    2. Qe5#
@@ -306,13 +306,53 @@ in a chess-style format:
     1. ... c5     2. Nxd5#
     1. ... d4     2. Re4#
 
+Hey, that's pretty nice, and it agrees with the Popeye output (apart from
+ordering).  Now it's just a question of grouping all the replies by mating
+move.  Here's a function to do that on the replies returned by the
+`mate_in_2` function, and prettyprint them:
 
-<a id="org1e5c3ca"></a>
+    def print_solution(move, replies, separator=" "):
+        print(f"1. {move}")
+    
+        # Group replies by mating move.
+        mating_moves = defaultdict(list)
+        for reply, mating_move in replies.items():
+            mating_moves[mating_move].append(reply)
+    
+        # Build output lines and find max line length.
+        maxlen = 0
+        replylist = []
+        for mating_move, replies in mating_moves.items():
+            replytext = separator.join(replies)
+            maxlen = max(maxlen, len(replytext))
+            replylist.append([replytext, mating_move])
+    
+        # Print them.
+        for replytext, mating_move in replylist:
+            print("1. ... %-*s  2. %s" % (maxlen, replytext, mating_move))
+
+Let's use this to print the example solution:
+
+    1. Ne3
+    1. ... Nh8 Nd8 Nh6 Nd6 Ng5       2. Qe5#
+    1. ... Ne5                       2. Qxe5#
+    1. ... Qxh7 Qh2 Qh1 Qf1          2. Qg4#
+    1. ... Qxd7 Qh6 Qe6 Qh5 Qf5 Qh4  2. N3g2#
+    1. ... Qg4                       2. Qxg4#
+    1. ... Qg3                       2. Qf6#
+    1. ... Qf3                       2. Nd3#
+    1. ... Qxe3                      2. Rxf7#
+    1. ... Qg2                       2. N3xg2#
+    1. ... c5                        2. Nxd5#
+    1. ... d4                        2. Re4#
+
+
+<a id="org0100c1a"></a>
 
 ## TODO Org Mode
 
 
-<a id="org30fdea5"></a>
+<a id="org5be6a7f"></a>
 
 # License
 
