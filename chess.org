@@ -5,10 +5,10 @@
 #+setupfile: html.org
 #+startup: showall hideblocks
 
-#+property: header-args+ :session
 #+property: header-args+ :results output
 #+property: header-args+ :eval no-export
-#+property: header-args+ :noweb yes
+
+#+property: header-args:python :session
 
 * Inspiration
 
@@ -19,9 +19,9 @@ random by a passing Nun, tonight's Star Prize is a Luxury Deluxe bottle of
 Prosecco, going to the team that comes third!".
 
 He also takes out adverts for the pub in a local monthly magazine called
-The Fuddler.  Every month, along with the advert, there's a mate-in-2 chess
-puzzle.  Richard is a chess fan; I don't know where he gets the puzzles
-from, but they're always quite fiendish.
+/The Fuddler/.  Every month, along with the advert, there's a mate-in-2
+chess puzzle.  Richard is a chess fan; I don't know where he gets the
+puzzles from, but they're always quite fiendish.
 
 In the advert puzzle shown ([[Fuddler]]), the Black King is hemmed in and can't
 move.  All White needs to do is give check, which looks easy: *RxN*, which
@@ -30,18 +30,18 @@ But there's an escape: *Qf5*, blocking the Rook check.  The Rook can simply
 take the Queen, giving check again, but now Black has another escape move:
 *Ke4*, since the Bishop is now blocked by the Rook.
 
+And that's as far as I got with this one.
+
 #+name: Fuddler
 #+caption: Advert in The Fuddler, November 2022
 #+attr_html: :width 60% :align center
 #+attr_latex: :width 10cm
 [[file:fuddler.png]]
 
-And that's as far as I got with this one.
-
 This happens a lot.  Even if I think I've worked out the answer, I'm never
 completely sure I haven't missed something.  And, slightly annoyingly,
 there's never any answer to the puzzle in the next issue.  But I'd like to
-know what I've missed, mainly to get that "Aha!" moment.  So... I decided
+know what I've missed, mainly to get that /Aha!/ moment.  So... I decided
 to find some tools to help.
 
 * Lichess
@@ -93,8 +93,8 @@ replies; without that, you just get the winning first move.
 Feeding it into Popeye, this is what comes out:
 
 #+name: run-popeye
-#+begin_src sh :stdin popeye-input :exports results
-popeye | egrep '^ +[0-9]' | sed -e 's/^   //'
+#+begin_src shell :stdin popeye-input :exports results
+  popeye | egrep '^ +[0-9]' | sed -e 's/^   //'
 #+end_src
 
 #+RESULTS: run-popeye
@@ -154,7 +154,7 @@ bit clearer /why/: It leaves Black in a [[https://en.wikipedia.org/wiki/Zugzwang
 worked that out.
 
 Well, Popeye did what I asked it, but I still wasn't happy with the method.
-The Popeye input syntax is quite clunky; I much prefer the FEN format used
+The Popeye input syntax is quite verbose; I much prefer the FEN format used
 by Lichess.  And I think the output could be summarized more succinctly, by
 grouping the moves by mating reply.  Could I do better?
 
@@ -340,14 +340,9 @@ Running this, we get:
 #+end_example
 
 Hey, that's pretty nice, and it agrees with the Popeye output (apart from
-ordering).  Now it's just a question of grouping all the replies by mating
-move.  Here's a function to do that on the replies returned by the
+ordering).  But I still think it would be nicer to group all the replies by
+mating move.  Here's a function to do that on the replies returned by the
 ~mate_in_2~ function, and prettyprint them:
-
-#+name: defaultdict
-#+begin_src python :results silent :exports none
-  from collections import defaultdict
-#+end_src
 
 #+name: print_solution
 #+begin_src python :results silent
@@ -359,16 +354,15 @@ move.  Here's a function to do that on the replies returned by the
       for reply, mating_move in replies.items():
           mating_moves[mating_move].append(reply)
 
-      # Build output lines and find max line length.
-      maxlen = 0
-      replylist = []
+      # Build output lines.
+      outputs = []
       for mating_move, replies in mating_moves.items():
           replytext = separator.join(replies)
-          maxlen = max(maxlen, len(replytext))
-          replylist.append([replytext, mating_move])
+          outputs.append([replytext, mating_move])
 
       # Print them.
-      for replytext, mating_move in replylist:
+      maxlen = max(len(text) for (text, move) in outputs)
+      for replytext, mating_move in outputs:
           print("1. ... %-*s  2. %s" % (maxlen, replytext, mating_move))
 #+end_src
 
@@ -396,17 +390,29 @@ Let's use this to print the example solution:
 1. ... d4                        2. Re4#
 #+end_example
 
-# TODO: try a table instead (:results value)
-# TODO: try making a game tree (what output options?)
-# TODO: try creating SVG move diagrams
+And finally (for now, at least) I'm content.
 
-* TODO Org Mode
+* TODO Postscript
 
 # Mention org mode, and link to org source
+# https://git.sr.ht/~zondo/orgchess/tree/main/item/chess.org
 
-* Tangling                                                         :noexport:
+* What next?                                                       :noexport:
 
-For a tangled solver script, we also need a main program to invoke:
+Python Chess has a bunch of stuff for making game trees.  I might explore
+that a bit further at some point.
+
+** Creating a standalone solver script
+
+All those Python Chess snippets can be put together to make a complete
+python script for solving mate-in-2 chess puzzles.  We /could/
+cut-and-paste them, but why bother when Org can do it automatically.  This
+process is known as /tangling/.
+
+For a tangled solver script, all that's missing is a main program to
+invoke.  Here's a simple one which takes a list of FEN positions as
+arguments, and for each one prints the board position and the mate-in-2
+solution.
 
 #+name: main
 #+begin_src python :results silent
@@ -422,7 +428,9 @@ For a tangled solver script, we also need a main program to invoke:
 
 Putting it all together, here's the complete script:
 
-#+begin_src python :tangle mate-in-2.py :results silent
+#+header :noweb yes
+#+header :shebang "#! /usr/bin/env python"
+#+begin_src python :tangle mate-in-2 :results silent
   """
   Mate-in-2 chess puzzle solver.
   """
@@ -446,10 +454,11 @@ Putting it all together, here's the complete script:
       main()
 #+end_src
 
-Finally, a test to see if it works.
+Finally, a test to see if it works.  It'll need to be tangled first, so
+that the file exists.
 
-#+begin_src sh
-  python mate-in-2.py 5K2/3PRnQB/2p5/3p4/5k2/7q/2N5/4N3
+#+begin_src shell
+  ./mate-in-2 5K2/3PRnQB/2p5/3p4/5k2/7q/2N5/4N3
 #+end_src
 
 #+RESULTS:
@@ -477,6 +486,19 @@ Finally, a test to see if it works.
 1. ... c5                        2. Nxd5#
 1. ... d4                        2. Re4#
 #+end_example
+
+** TODO Printing the latest Fuddler solution
+
+Insert the YAML puzzles, and solve the latest fuddler from here.
+
+** SVG move diagrams
+
+I touched on the SVG output above, but did nothing with it.  But it can
+also annotate positions with coloured arrows; it might be fun to try and
+create a diagram illustrating a particular mating move, with all the
+replies that lead to it.
+
+** Making a game tree
 
 * Footnotes
 
