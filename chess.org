@@ -524,6 +524,7 @@ Here's a list of all the Fuddler puzzles I've gathered so far:
 | 2022-10 | 3R4/Q7/2k5/5n2/P3NK2/4p3/5P2/nq5B      |
 | 2022-11 | 5K2/3PRnQB/2p5/3p4/5k2/7q/2N5/4N3      |
 | 2022-12 | 8/2N1K1p1/4p1B1/4k3/6R1/4P2b/3n1N2/4n3 |
+| 2023-01 | 8/1p1R4/2b5/1Qr1k1K1/4NN2/1n3P2/8/8    |
 
 This snippet takes the final entry and prints the solution:
 
