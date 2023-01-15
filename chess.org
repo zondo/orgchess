@@ -170,9 +170,9 @@ First, let's see if we can get it to read my puzzle FEN position.
 
 #+name: imports
 #+begin_src python :results silent :exports none
-import sys
-import chess
-from collections import defaultdict
+  import sys
+  import chess
+  from collections import defaultdict
 #+end_src
 
 #+name: make-board
@@ -198,10 +198,13 @@ Cute.  An ASCII board showing the position.  Digging into the docs a bit
 more, it turns out that it can also write SVG files:
 
 #+begin_src python :results silent
-from pathlib import Path
-from chess import svg
+  from pathlib import Path
+  from chess import svg
 
-Path("fuddler.svg").write_text(svg.board(board))
+  def print_svg(board, filename):
+      Path(filename).write_text(svg.board(board))
+
+  print_svg(board, "fuddler.svg")
 #+end_src
 
 Here's what the resulting file looks like:
@@ -399,9 +402,6 @@ And finally (for now, at least) I'm content.
 
 * What next?                                                       :noexport:
 
-Python Chess has a bunch of stuff for making game trees.  I might explore
-that a bit further at some point.
-
 ** Creating a standalone solver script
 
 All those Python Chess snippets can be put together to make a complete
@@ -527,14 +527,26 @@ Here's a list of all the Fuddler puzzles I've gathered so far:
 
 This snippet takes the final entry and prints the solution:
 
-#+BEGIN_SRC python :var puzzles=fuddler-puzzles
-  fen = puzzles[-1][1]
+#+BEGIN_SRC python :var puzzles=fuddler-puzzles :results silent
+  name, fen = puzzles[-1]
   board = chess.Board(fen)
+  print_svg(board, "solved.svg")
+#+end_src
+
+#+attr_html: :width 30% :align center
+[[file:solved.svg]]
+
+#+BEGIN_SRC python
+  print(name)
+  print()
+
   for move, replies in mate_in_2(board):
       print_solution(move, replies)
 #+END_SRC
 
 #+RESULTS:
+: 2022-12
+: 
 : 1. Rb4
 : 1. ... Bf5 Bg4 Nc4 Ndf3 Nf1 Nb1 Nef3 Ng2 Nc2  2. Rb5#
 : 1. ... Bg2 Bf1                                2. Ng4#
@@ -550,6 +562,9 @@ create a diagram illustrating a particular mating move, with all the
 replies that lead to it.
 
 ** Making a game tree
+
+Python Chess has a bunch of stuff for making game trees.  I might explore
+that a bit further at some point.
 
 * Footnotes
 
