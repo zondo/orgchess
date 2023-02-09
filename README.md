@@ -1,23 +1,23 @@
 
 # Table of Contents
 
--   [Literate Chess Puzzle Solving with Org](#org2a52d08)
-    -   [Inspiration](#org29a5478)
-    -   [Lichess](#org1cb31dd)
-    -   [Popeye](#orge7cf02a)
-    -   [Python Chess](#orga9549f9)
-    -   [Org Mode](#org0100c1a)
--   [License](#org5be6a7f)
+-   [Literate Chess Puzzle Solving with Org](#orgea548d0)
+    -   [Inspiration](#org1708b59)
+    -   [Lichess](#org669faba)
+    -   [Popeye](#org277c7a7)
+    -   [Python Chess](#orgfe9f9ac)
+    -   [Postscript](#org0a10ca4)
+-   [License](#orgbc7ca69)
 
 
 
-<a id="org2a52d08"></a>
+<a id="orgea548d0"></a>
 
 # Literate Chess Puzzle Solving with Org
 
 
 
-<a id="org29a5478"></a>
+<a id="org1708b59"></a>
 
 ## Inspiration
 
@@ -28,29 +28,29 @@ random by a passing Nun, tonight's Star Prize is a Luxury Deluxe bottle of
 Prosecco, going to the team that comes third!".
 
 He also takes out adverts for the pub in a local monthly magazine called
-The Fuddler.  Every month, along with the advert, there's a mate-in-2 chess
-puzzle.  Richard is a chess fan; I don't know where he gets the puzzles
-from, but they're always quite fiendish.
+*The Fuddler*.  Every month, along with the advert, there's a mate-in-2
+chess puzzle.  Richard is a chess fan; I don't know where he gets the
+puzzles from, but they're always quite fiendish.
 
-In the advert puzzle shown ([4](#org1101cc0)), the Black King is hemmed in and can't
+In the advert puzzle shown ([5](#org023c262)), the Black King is hemmed in and can't
 move.  All White needs to do is give check, which looks easy: **RxN**, which
 also removes the troublesome Knight, and the King still has nowhere to go.
 But there's an escape: **Qf5**, blocking the Rook check.  The Rook can simply
 take the Queen, giving check again, but now Black has another escape move:
 **Ke4**, since the Bishop is now blocked by the Rook.
 
-![img](fuddler.png "Advert in The Fuddler, November 2022")
-
 And that's as far as I got with this one.
+
+![img](fuddler.png "Advert in The Fuddler, November 2022")
 
 This happens a lot.  Even if I think I've worked out the answer, I'm never
 completely sure I haven't missed something.  And, slightly annoyingly,
 there's never any answer to the puzzle in the next issue.  But I'd like to
-know what I've missed, mainly to get that "Aha!" moment.  So&#x2026; I decided
+know what I've missed, mainly to get that *Aha!* moment.  So&#x2026; I decided
 to find some tools to help.
 
 
-<a id="org1cb31dd"></a>
+<a id="org669faba"></a>
 
 ## Lichess
 
@@ -72,7 +72,7 @@ missing something.  Lichess has an [API](https://lichess.org/api), but it doesn'
 anything to help solve chess puzzles.
 
 
-<a id="orge7cf02a"></a>
+<a id="org277c7a7"></a>
 
 ## Popeye
 
@@ -150,12 +150,12 @@ bit clearer *why*: It leaves Black in a [Zugzwang](https://en.wikipedia.org/wiki
 worked that out.
 
 Well, Popeye did what I asked it, but I still wasn't happy with the method.
-The Popeye input syntax is quite clunky; I much prefer the FEN format used
+The Popeye input syntax is quite verbose; I much prefer the FEN format used
 by Lichess.  And I think the output could be summarized more succinctly, by
 grouping the moves by mating reply.  Could I do better?
 
 
-<a id="orga9549f9"></a>
+<a id="orgfe9f9ac"></a>
 
 ## Python Chess
 
@@ -188,7 +188,10 @@ more, it turns out that it can also write SVG files:
     from pathlib import Path
     from chess import svg
     
-    Path("fuddler.svg").write_text(svg.board(board))
+    def print_svg(board, filename):
+        Path(filename).write_text(svg.board(board))
+    
+    print_svg(board, "fuddler.svg")
 
 Here's what the resulting file looks like:
 
@@ -307,8 +310,8 @@ Running this, we get:
     1. ... d4     2. Re4#
 
 Hey, that's pretty nice, and it agrees with the Popeye output (apart from
-ordering).  Now it's just a question of grouping all the replies by mating
-move.  Here's a function to do that on the replies returned by the
+ordering).  But I still think it would be nicer to group all the replies by
+mating move.  Here's a function to do that on the replies returned by the
 `mate_in_2` function, and prettyprint them:
 
     def print_solution(move, replies, separator=" "):
@@ -319,16 +322,15 @@ move.  Here's a function to do that on the replies returned by the
         for reply, mating_move in replies.items():
             mating_moves[mating_move].append(reply)
     
-        # Build output lines and find max line length.
-        maxlen = 0
-        replylist = []
+        # Build output lines.
+        outputs = []
         for mating_move, replies in mating_moves.items():
             replytext = separator.join(replies)
-            maxlen = max(maxlen, len(replytext))
-            replylist.append([replytext, mating_move])
+            outputs.append([replytext, mating_move])
     
         # Print them.
-        for replytext, mating_move in replylist:
+        maxlen = max(len(text) for (text, move) in outputs)
+        for replytext, mating_move in outputs:
             print("1. ... %-*s  2. %s" % (maxlen, replytext, mating_move))
 
 Let's use this to print the example solution:
@@ -346,13 +348,15 @@ Let's use this to print the example solution:
     1. ... c5                        2. Nxd5#
     1. ... d4                        2. Re4#
 
-
-<a id="org0100c1a"></a>
-
-## TODO Org Mode
+And finally (for now, at least) I'm content.
 
 
-<a id="org5be6a7f"></a>
+<a id="org0a10ca4"></a>
+
+## TODO Postscript
+
+
+<a id="orgbc7ca69"></a>
 
 # License
 
